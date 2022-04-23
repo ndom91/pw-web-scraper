@@ -1,15 +1,18 @@
 {
-  "name": "web-scraper-berlin",
-  "version": "1.0.0",
-  "description": "",
+  "name": "pw-web-scraper",
+  "version": "0.0.1",
+  "description": "Simple Playwright based web-scraper",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "playwright",
+    "webscraping"
+  ],
+  "author": "ndom91 <yo@ndo.dev>",
+  "license": "MIT",
   "dependencies": {
     "p-queue": "^7.2.0",
     "playwright": "^1.21.1"

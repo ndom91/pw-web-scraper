@@ -3,7 +3,6 @@ const fs = require('fs/promises')
 
 const SEARCH_TERM = 'berlin'
 
-// Apify.main is a helper function, you don't need to use it.
 Apify.main(async () => {
   const file = await fs.readFile('sites.txt', 'utf8')
   const sites = file.split('\n')

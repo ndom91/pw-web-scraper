@@ -6,14 +6,21 @@ import PQueue from 'p-queue'
 const SEARCH_TERM = 'berlin'
 
 const seenURLs = new Set()
-const queue = new PQueue({ concurrency: 5 })
+const queue = new PQueue({ concurrency: 5, timeout: 10000 })
+let count = 0
+
+queue.on('active', () => {
+  if (count % 25 === 0) {
+    console.log(
+      `> Queue Update - Count: ${count}  Size: ${queue.size}  Pending: ${queue.pending}`
+    )
+  }
+  ++count
+})
 
 const crawlPage = async (site, page) => {
   try {
-    if (!site.length) {
-      return
-    }
-    if (seenURLs.has(site)) {
+    if (!site.length || seenURLs.has(site)) {
       return
     }
     const hostname = new URL(site).hostname
@@ -42,7 +49,7 @@ const crawlPage = async (site, page) => {
       }
     }
   } catch (e) {
-    console.error('ERROR', e)
+    console.error(`\n[E]> ${e.message.substring(0, 50)}\n`)
   }
 }
 
@@ -54,7 +61,7 @@ const main = async () => {
   })
 
   const context = await browser.newContext()
-  context.setDefaultTimeout(5000)
+  context.setDefaultTimeout(10000)
   const page = await context.newPage()
 
   const sites = file.split('\n')

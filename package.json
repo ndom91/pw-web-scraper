@@ -3,18 +3,20 @@
   "version": "0.0.1",
   "description": "Simple Playwright based web-scraper",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "scrape": "apify run --purge"
   },
   "keywords": [
+    "apify",
     "playwright",
     "webscraping"
   ],
   "author": "ndom91 <yo@ndo.dev>",
   "license": "MIT",
   "dependencies": {
-    "p-queue": "^7.2.0",
+    "apify": "^2.3.0",
+    "apify-cli": "^0.7.2",
     "playwright": "^1.21.1"
   },
   "devDependencies": {

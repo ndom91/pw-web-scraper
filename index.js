@@ -1,78 +1,62 @@
-import fs from 'fs/promises'
-import dns from 'dns/promises'
-import { chromium } from 'playwright'
-import PQueue from 'p-queue'
+const Apify = require('apify')
+const fs = require('fs/promises')
 
 const SEARCH_TERM = 'berlin'
 
-const seenURLs = new Set()
-const queue = new PQueue({ concurrency: 5, timeout: 10000 })
-let count = 0
-
-queue.on('active', () => {
-  if (count % 25 === 0) {
-    console.log(
-      `> Queue Update - Count: ${count}  Size: ${queue.size}  Pending: ${queue.pending}`
-    )
-  }
-  ++count
-})
-
-const crawlPage = async (site, page) => {
-  try {
-    if (!site.length || seenURLs.has(site)) {
-      return
-    }
-    const hostname = new URL(site).hostname
-    const dnsResults = await dns.resolve(hostname)
-    if (!dnsResults.length) {
-      console.log(`> Skipping ${site} [COULD_NOT_RESOLVE]`)
-      return
-    }
-    console.debug('> Crawling:', site)
-
-    seenURLs.add(site)
-    await page.goto(site)
-    const pageContent = await page.content()
-    if (pageContent.match(new RegExp(SEARCH_TERM, 'gi'))) {
-      console.log(`**** ${SEARCH_TERM} found in`, site)
-      fs.appendFile('./output.txt', `${site}\n`)
-    } else {
-      const allUrls = await page.$$eval('a', (el) => el.map((e) => e.href))
-      const localUrls = Array.isArray(allUrls)
-        ? allUrls
-            .filter((url) => url.match(hostname))
-            .filter((url) => !url.match(/^mailto:.*/i))
-        : [allUrls]
-      for (const url of localUrls) {
-        await queue.add(() => crawlPage(url, page))
-      }
-    }
-  } catch (e) {
-    console.error(`\n[E]> ${e.message.substring(0, 50)}\n`)
-  }
-}
-
-const main = async () => {
+// Apify.main is a helper function, you don't need to use it.
+Apify.main(async () => {
   const file = await fs.readFile('sites.txt', 'utf8')
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: chromium.executablePath(),
-  })
-
-  const context = await browser.newContext()
-  context.setDefaultTimeout(10000)
-  const page = await context.newPage()
-
   const sites = file.split('\n')
+  const sitesArray = sites
+    .map((site) => {
+      if (!site.length) return
+      return {
+        url: site,
+      }
+    })
+    .filter(Boolean)
 
-  for (const site of sites) {
-    await queue.add(() => crawlPage(site, page))
-  }
-  queue.on('completed', async (result) => {
-    console.log('\n> Queue completed!\n\n', result)
-    await browser.close()
+  const requestList = await Apify.openRequestList('start-urls', sitesArray)
+  const requestQueue = await Apify.openRequestQueue()
+
+  const crawler = new Apify.PlaywrightCrawler({
+    requestList,
+    requestQueue,
+    launchContext: {
+      launchOptions: {
+        headless: true,
+      },
+    },
+    handlePageFunction: async ({ request, page }) => {
+      console.log(`Processing ${request.url}...`)
+      const html = await page.content()
+
+      // Check if 'SEARCH_TERM' is found in rendered HTML
+      if (html.match(new RegExp(SEARCH_TERM, 'gi'))) {
+        console.log(`**** ${SEARCH_TERM} found in`, request.url)
+        fs.appendFile('./output.txt', `${request.url}\n`)
+        await Apify.pushData({ url: request.url })
+      }
+
+      // Enqueue other internal links found on initial page
+      if (!request.userData.detailPage) {
+        await Apify.utils.enqueueLinks({
+          page,
+          requestQueue,
+          selector: 'a',
+          pseudoUrls: [`${request.url}/[.*]`],
+          transformRequestFunction: (req) => {
+            req.userData.detailPage = true
+            return req
+          },
+        })
+      }
+    },
+    handleFailedRequestFunction: async ({ request }) => {
+      console.log(`Request ${request.url} failed too many times.`)
+    },
   })
-}
 
-main()
+  await crawler.run()
+  console.log('Crawler Finished!')
+})

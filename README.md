@@ -1,8 +1,8 @@
-# Web Scraper
+# 🌐 Web Scraper
 
-Basic `playwright` based web-scraper!
+Basic [`playwright`](https://playwright.dev) based web-scraper!
 
-## Setup
+## 🕹️ Setup
 
 1. Clone repository and install dependencies
 
@@ -18,10 +18,10 @@ $ npm install
 
 4. Run `npm start` :tada:
 
-## Troubleshooting
+## 🚧 Troubleshooting
 
 - If you have many sites and a powerful computer, you can increase the `p-queue` concurrency setting to run more playwright instances in parallel.
 
-## License
+## 📝 License
 
 MIT

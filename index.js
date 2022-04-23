@@ -46,7 +46,7 @@ const crawlPage = async (site, page) => {
   }
 }
 
-;(async function () {
+const main = async () => {
   const file = await fs.readFile('sites.txt', 'utf8')
   const browser = await chromium.launch({
     headless: true,
@@ -65,6 +65,7 @@ const crawlPage = async (site, page) => {
   queue.on('completed', async (result) => {
     console.log('\n> Queue completed!\n\n', result)
     await browser.close()
-    process.exit(0)
   })
-})()
+}
+
+main()

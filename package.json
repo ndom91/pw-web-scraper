@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "eslint": "^8.14.0",
+    "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.6.2",
     "simple-git-hooks": "^2.7.0"
   },
@@ -27,9 +28,22 @@
     "pre-commit": "npx lint-staged"
   },
   "lint-staged": {
-    "*": [
-      "prettier --ignore-unknown --write",
-      "eslint --fix"
-    ]
+    "*.{js,ts}": "prettier --write"
+  },
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "browser": true,
+      "es2021": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "prettier"
+    ],
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "rules": {}
   }
 }
